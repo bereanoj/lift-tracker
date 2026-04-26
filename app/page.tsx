@@ -14,8 +14,8 @@ type LiftLog = {
 };
 
 const workoutTemplates: Record<string, string[]> = {
-  "Upper A": ["Bench Press", "Barbell Row", "Overhead Press", "Lat Pulldown"],
-  "Lower A": ["Squat", "Romanian Deadlift", "Leg Press", "Hamstring Curl"],
+  "Upper A": ["Bench Press", "Barbell Row", "Overhead Press", "Lat Pulldown", "Incline Bench Press", "Pull-Ups", "Dumbbell Shoulder Press", "Cable Row"],
+  "Lower A": ["Squat", "Romanian Deadlift", "Leg Press", "Hamstring Curl", "Deadlift", "Lunges", "Leg Curl", "Calf Raises"],
   "Upper B": ["Incline Bench Press", "Pull-Ups", "Dumbbell Shoulder Press", "Cable Row"],
   "Lower B": ["Deadlift", "Lunges", "Leg Curl", "Calf Raises"],
 };
