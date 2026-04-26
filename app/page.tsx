@@ -1,7 +1,16 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Plus, Trash2, Dumbbell, TrendingUp } from "lucide-react";
+
+type LiftLog = {
+  id: string;
+  date: string;
+  exercise: string;
+  weight: number;
+  reps: number;
+  estimatedOneRepMax: number;
+};
 
 const starterExercises = [
   "Bench Press",
@@ -19,20 +28,40 @@ export default function LiftTrackerApp() {
   const [customExercise, setCustomExercise] = useState("");
   const [weight, setWeight] = useState("");
   const [reps, setReps] = useState("");
-  const [logs, setLogs] = useState<any[]>([]);
+
+  const [logs, setLogs] = useState<LiftLog[]>(() => {
+    if (typeof window === "undefined") return [];
+
+    const savedLogs = localStorage.getItem("lift-tracker-logs");
+
+    try {
+      return savedLogs ? JSON.parse(savedLogs) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    localStorage.setItem("lift-tracker-logs", JSON.stringify(logs));
+  }, [logs]);
 
   const selectedExercise = customExercise.trim() || exercise;
 
   const addSet = () => {
     if (!selectedExercise || !weight || !reps) return;
 
-    const newSet = {
+    const weightNumber = Number(weight);
+    const repsNumber = Number(reps);
+
+    if (weightNumber <= 0 || repsNumber <= 0) return;
+
+    const newSet: LiftLog = {
       id: Date.now().toString(),
       date: new Date().toLocaleDateString(),
       exercise: selectedExercise,
-      weight: Number(weight),
-      reps: Number(reps),
-      estimatedOneRepMax: Math.round(Number(weight) * (1 + Number(reps) / 30)),
+      weight: weightNumber,
+      reps: repsNumber,
+      estimatedOneRepMax: Math.round(weightNumber * (1 + repsNumber / 30)),
     };
 
     setLogs([newSet, ...logs]);
@@ -47,11 +76,13 @@ export default function LiftTrackerApp() {
   const bestByExercise = useMemo(() => {
     return logs.reduce((acc, log) => {
       const currentBest = acc[log.exercise];
+
       if (!currentBest || log.estimatedOneRepMax > currentBest.estimatedOneRepMax) {
         acc[log.exercise] = log;
       }
+
       return acc;
-    }, {} as Record<string, any>);
+    }, {} as Record<string, LiftLog>);
   }, [logs]);
 
   const recentForSelected = logs
@@ -67,9 +98,12 @@ export default function LiftTrackerApp() {
           <div className="rounded-2xl bg-slate-900 p-3 text-white shadow-sm">
             <Dumbbell size={28} />
           </div>
+
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Lift Tracker</h1>
-            <p className="text-slate-600">Log sets. Beat last time. No useless fluff.</p>
+            <p className="text-slate-600">
+              Log sets. Beat last time. No useless fluff.
+            </p>
           </div>
         </div>
 
@@ -90,7 +124,9 @@ export default function LiftTrackerApp() {
               </div>
 
               <div>
-                <label className="mb-1 block text-sm font-medium">Custom exercise</label>
+                <label className="mb-1 block text-sm font-medium">
+                  Custom exercise
+                </label>
                 <input
                   placeholder="Optional"
                   value={customExercise}
@@ -128,7 +164,8 @@ export default function LiftTrackerApp() {
                   onClick={addSet}
                   className="flex w-full items-center justify-center rounded-xl bg-slate-900 px-4 py-2 font-medium text-white"
                 >
-                  <Plus className="mr-2" size={18} /> Log Set
+                  <Plus className="mr-2" size={18} />
+                  Log Set
                 </button>
               </div>
             </div>
@@ -147,7 +184,9 @@ export default function LiftTrackerApp() {
             {bestSelected ? (
               <div className="mt-4 rounded-xl bg-slate-100 p-4">
                 <p className="text-sm text-slate-600">Best estimated 1RM</p>
-                <p className="text-3xl font-bold">{bestSelected.estimatedOneRepMax} lb</p>
+                <p className="text-3xl font-bold">
+                  {bestSelected.estimatedOneRepMax} lb
+                </p>
                 <p className="text-sm text-slate-600">
                   From {bestSelected.weight} x {bestSelected.reps}
                 </p>
@@ -196,7 +235,9 @@ export default function LiftTrackerApp() {
 
           <div className="space-y-2">
             {logs.length === 0 ? (
-              <p className="text-slate-500">Your training history will show up here.</p>
+              <p className="text-slate-500">
+                Your training history will show up here.
+              </p>
             ) : (
               logs.map((log) => (
                 <div
