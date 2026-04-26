@@ -6,25 +6,23 @@ import { Plus, Trash2, Dumbbell, TrendingUp } from "lucide-react";
 type LiftLog = {
   id: string;
   date: string;
+  workout: string;
   exercise: string;
   weight: number;
   reps: number;
   estimatedOneRepMax: number;
 };
 
-const starterExercises = [
-  "Bench Press",
-  "Overhead Press",
-  "Barbell Row",
-  "Lat Pulldown",
-  "Squat",
-  "Romanian Deadlift",
-  "Leg Press",
-  "Hamstring Curl",
-];
+const workoutTemplates: Record<string, string[]> = {
+  "Upper A": ["Bench Press", "Barbell Row", "Overhead Press", "Lat Pulldown"],
+  "Lower A": ["Squat", "Romanian Deadlift", "Leg Press", "Hamstring Curl"],
+  "Upper B": ["Incline Bench Press", "Pull-Ups", "Dumbbell Shoulder Press", "Cable Row"],
+  "Lower B": ["Deadlift", "Lunges", "Leg Curl", "Calf Raises"],
+};
 
 export default function LiftTrackerApp() {
-  const [exercise, setExercise] = useState("Bench Press");
+  const [selectedWorkout, setSelectedWorkout] = useState("Upper A");
+  const [exercise, setExercise] = useState(workoutTemplates["Upper A"][0]);
   const [customExercise, setCustomExercise] = useState("");
   const [weight, setWeight] = useState("");
   const [reps, setReps] = useState("");
@@ -45,6 +43,11 @@ export default function LiftTrackerApp() {
     localStorage.setItem("lift-tracker-logs", JSON.stringify(logs));
   }, [logs]);
 
+  useEffect(() => {
+    setExercise(workoutTemplates[selectedWorkout][0]);
+    setCustomExercise("");
+  }, [selectedWorkout]);
+
   const selectedExercise = customExercise.trim() || exercise;
 
   const addSet = () => {
@@ -58,6 +61,7 @@ export default function LiftTrackerApp() {
     const newSet: LiftLog = {
       id: Date.now().toString(),
       date: new Date().toLocaleDateString(),
+      workout: selectedWorkout,
       exercise: selectedExercise,
       weight: weightNumber,
       reps: repsNumber,
@@ -89,6 +93,10 @@ export default function LiftTrackerApp() {
     .filter((log) => log.exercise === selectedExercise)
     .slice(0, 5);
 
+  const todaysWorkoutLogs = logs
+    .filter((log) => log.workout === selectedWorkout)
+    .slice(0, 10);
+
   const bestSelected = bestByExercise[selectedExercise];
 
   return (
@@ -101,14 +109,25 @@ export default function LiftTrackerApp() {
 
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Lift Tracker</h1>
-            <p className="text-slate-600">
-              Log sets. Beat last time. No useless fluff.
-            </p>
+            <p className="text-slate-600">Log sets. Beat last time. No useless fluff.</p>
           </div>
         </div>
 
         <section className="rounded-2xl bg-white p-5 shadow-sm">
           <div className="space-y-4">
+            <div>
+              <label className="mb-1 block text-sm font-medium">Workout</label>
+              <select
+                value={selectedWorkout}
+                onChange={(e) => setSelectedWorkout(e.target.value)}
+                className="w-full rounded-xl border border-slate-300 bg-white p-2"
+              >
+                {Object.keys(workoutTemplates).map((workout) => (
+                  <option key={workout}>{workout}</option>
+                ))}
+              </select>
+            </div>
+
             <div className="grid gap-3 md:grid-cols-2">
               <div>
                 <label className="mb-1 block text-sm font-medium">Exercise</label>
@@ -117,16 +136,14 @@ export default function LiftTrackerApp() {
                   value={exercise}
                   onChange={(e) => setExercise(e.target.value)}
                 >
-                  {starterExercises.map((item) => (
+                  {workoutTemplates[selectedWorkout].map((item) => (
                     <option key={item}>{item}</option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className="mb-1 block text-sm font-medium">
-                  Custom exercise
-                </label>
+                <label className="mb-1 block text-sm font-medium">Custom exercise</label>
                 <input
                   placeholder="Optional"
                   value={customExercise}
@@ -179,14 +196,12 @@ export default function LiftTrackerApp() {
               <h2 className="text-xl font-semibold">Current Exercise</h2>
             </div>
 
-            <p className="text-sm text-slate-600">{selectedExercise}</p>
+            <p className="text-sm text-slate-600">{selectedWorkout} / {selectedExercise}</p>
 
             {bestSelected ? (
               <div className="mt-4 rounded-xl bg-slate-100 p-4">
                 <p className="text-sm text-slate-600">Best estimated 1RM</p>
-                <p className="text-3xl font-bold">
-                  {bestSelected.estimatedOneRepMax} lb
-                </p>
+                <p className="text-3xl font-bold">{bestSelected.estimatedOneRepMax} lb</p>
                 <p className="text-sm text-slate-600">
                   From {bestSelected.weight} x {bestSelected.reps}
                 </p>
@@ -209,9 +224,7 @@ export default function LiftTrackerApp() {
                     className="flex items-center justify-between rounded-xl bg-slate-50 p-3"
                   >
                     <div>
-                      <p className="font-medium">
-                        {log.weight} lb x {log.reps}
-                      </p>
+                      <p className="font-medium">{log.weight} lb x {log.reps}</p>
                       <p className="text-sm text-slate-500">
                         Est. 1RM: {log.estimatedOneRepMax} lb
                       </p>
@@ -231,15 +244,13 @@ export default function LiftTrackerApp() {
         </div>
 
         <section className="rounded-2xl bg-white p-5 shadow-sm">
-          <h2 className="mb-3 text-xl font-semibold">All Logs</h2>
+          <h2 className="mb-3 text-xl font-semibold">{selectedWorkout} Logs</h2>
 
           <div className="space-y-2">
-            {logs.length === 0 ? (
-              <p className="text-slate-500">
-                Your training history will show up here.
-              </p>
+            {todaysWorkoutLogs.length === 0 ? (
+              <p className="text-slate-500">No logs for this workout yet.</p>
             ) : (
-              logs.map((log) => (
+              todaysWorkoutLogs.map((log) => (
                 <div
                   key={log.id}
                   className="grid grid-cols-5 items-center rounded-xl bg-slate-50 p-3 text-sm"
